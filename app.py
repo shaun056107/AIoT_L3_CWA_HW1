@@ -4,14 +4,19 @@ Taiwan City-Level Real-Time Weather Dashboard
 Powered by CWA O-A0003-001 (aggregated to county level)
 """
 
-import sqlite3
+import os
 import math
+import json
+import urllib.request
+import ssl
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import folium
 from streamlit_folium import st_folium
+
+API_KEY = os.getenv('CWA_API_KEY', 'CWA-BAAEAF7F-E786-4219-A518-EA08F4201EFB')
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -94,10 +99,76 @@ h2, h3 { color: #0ea5e9 !important; font-weight: 700 !important; }
 # ── Helpers ──────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=300)
 def load_data() -> pd.DataFrame:
-    conn = sqlite3.connect('data.db')
-    df = pd.read_sql_query("SELECT * FROM ObservationStations", conn)
-    conn.close()
-    return df
+    url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization={API_KEY}&format=JSON"
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, context=ctx, timeout=10) as response:
+            data = json.loads(response.read().decode('utf-8'))
+    except Exception as e:
+        st.error(f"⚠️ 無法連接氣象署 API: {e}")
+        st.stop()
+
+    stations = data.get('records', {}).get('Station', [])
+    rows = []
+    for s in stations:
+        try:
+            sid = s.get('StationId')
+            sname = s.get('StationName')
+            obs_time = s.get('ObsTime', {}).get('DateTime')
+            geo = s.get('GeoInfo', {})
+            county = geo.get('CountyName')
+            town = geo.get('TownName')
+            
+            coords = geo.get('Coordinates', [])
+            lat = float(coords[0].get('StationLatitude')) if coords and coords[0].get('StationLatitude') else None
+            lon = float(coords[0].get('StationLongitude')) if coords and coords[0].get('StationLongitude') else None
+
+            weath = s.get('WeatherElement', {})
+            
+            def parse_val(v):
+                try:
+                    val = float(v)
+                    return None if val < -90 else val
+                except:
+                    return None
+
+            temp = parse_val(weath.get('AirTemperature'))
+            hum = parse_val(weath.get('RelativeHumidity'))
+            wind_speed = parse_val(weath.get('WindSpeed'))
+            pressure = parse_val(weath.get('AirPressure'))
+            uv = parse_val(weath.get('UVIndex'))
+            wind_dir = parse_val(weath.get('WindDirection'))
+
+            precip = 0.0
+            now_p = weath.get('Now', {})
+            if isinstance(now_p, dict) and 'Precipitation' in now_p:
+                precip = parse_val(now_p.get('Precipitation')) or 0.0
+            else:
+                precip = parse_val(weath.get('Precipitation')) or 0.0
+
+            rows.append({
+                'StationId': sid,
+                'StationName': sname,
+                'ObsTime': obs_time,
+                'County': county,
+                'Town': town,
+                'AirTemperature': temp,
+                'RelativeHumidity': hum,
+                'WindSpeed': wind_speed,
+                'AirPressure': pressure,
+                'UVIndex': uv,
+                'Precipitation': precip,
+                'WindDirection': wind_dir,
+                'Latitude': lat,
+                'Longitude': lon,
+            })
+        except Exception:
+            continue
+
+    return pd.DataFrame(rows)
 
 
 def wind_deg_to_label(deg) -> str:
@@ -124,7 +195,7 @@ COUNTY_COORDS = {
 try:
     raw = load_data()
 except Exception:
-    st.error("⚠️  無法讀取 data.db，請先執行 `python data_pipeline.py`")
+    st.error("⚠️  無法從氣象署 API 讀取資料")
     st.stop()
 
 raw = raw.dropna(subset=['County'])
