@@ -8,7 +8,6 @@ import os
 import math
 import json
 import urllib.request
-import ssl
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -101,11 +100,8 @@ h2, h3 { color: #0ea5e9 !important; font-weight: 700 !important; }
 def load_data() -> pd.DataFrame:
     url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization={API_KEY}&format=JSON"
     try:
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, context=ctx, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:
             data = json.loads(response.read().decode('utf-8'))
     except Exception as e:
         st.error(f"⚠️ 無法連接氣象署 API: {e}")
