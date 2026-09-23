@@ -4,14 +4,19 @@ Taiwan City-Level Real-Time Weather Dashboard
 Powered by CWA O-A0003-001 (aggregated to county level)
 """
 
-import sqlite3
+import os
 import math
+import requests
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import folium
 from streamlit_folium import st_folium
+from dotenv import load_dotenv
+
+load_dotenv()
+API_KEY = os.getenv('CWA_API_KEY')
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -92,12 +97,64 @@ h2, h3 { color: #0ea5e9 !important; font-weight: 700 !important; }
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=600)
 def load_data() -> pd.DataFrame:
-    conn = sqlite3.connect('data.db')
-    df = pd.read_sql_query("SELECT * FROM ObservationStations", conn)
-    conn.close()
-    return df
+    if not API_KEY:
+        st.error("⚠️ 未設定 CWA_API_KEY，請確認 Vercel 環境變數或 .env 檔案。")
+        st.stop()
+        
+    url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization={API_KEY}&format=JSON"
+    requests.packages.urllib3.disable_warnings()
+    
+    try:
+        response = requests.get(url, verify=False, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        st.error(f"⚠️ 無法連接氣象署 API: {e}")
+        st.stop()
+
+    stations = data.get('records', {}).get('Station', [])
+    records = []
+    
+    for stn in stations:
+        geo = stn.get('GeoInfo', {})
+        we = stn.get('WeatherElement', {})
+        
+        # 尋找 WGS84 座標
+        lat, lon = None, None
+        for coord in geo.get('Coordinates', []):
+            if coord.get('CoordinateName') == 'WGS84':
+                lat = float(coord.get('StationLatitude', 0) or 0)
+                lon = float(coord.get('StationLongitude', 0) or 0)
+                break
+
+        def safe_float(val):
+            try:
+                v = float(val)
+                return None if v == -99.0 or v == -99 else v
+            except (TypeError, ValueError):
+                return None
+
+        records.append({
+            'StationId':         stn.get('StationId', ''),
+            'StationName':       stn.get('StationName', ''),
+            'ObsTime':           stn.get('ObsTime', {}).get('DateTime', ''),
+            'County':            geo.get('CountyName', ''),
+            'Town':              geo.get('TownName', ''),
+            'Latitude':          lat,
+            'Longitude':         lon,
+            'Altitude':          safe_float(geo.get('StationAltitude')),
+            'AirTemperature':    safe_float(we.get('AirTemperature')),
+            'RelativeHumidity':  safe_float(we.get('RelativeHumidity')),
+            'WindSpeed':         safe_float(we.get('WindSpeed')),
+            'WindDirection':     safe_float(we.get('WindDirection')),
+            'AirPressure':       safe_float(we.get('AirPressure')),
+            'Precipitation':     safe_float(we.get('Now', {}).get('Precipitation')),
+            'UVIndex':           safe_float(we.get('UVIndex')),
+        })
+        
+    return pd.DataFrame(records)
 
 
 def wind_deg_to_label(deg) -> str:
@@ -123,8 +180,8 @@ COUNTY_COORDS = {
 # ── Load & aggregate ───────────────────────────────────────────────────────────
 try:
     raw = load_data()
-except Exception:
-    st.error("⚠️  無法讀取 data.db，請先執行 `python data_pipeline.py`")
+except Exception as e:
+    st.error(f"⚠️ 資料載入失敗: {e}")
     st.stop()
 
 raw = raw.dropna(subset=['County'])
