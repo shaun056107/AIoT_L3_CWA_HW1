@@ -1,0 +1,474 @@
+{
+  "success": "true",
+  "result": {
+    "resource_id": "O-A0003-001",
+    "fields": [
+      {
+        "id": "StationName",
+        "type": "String"
+      },
+      {
+        "id": "StationId",
+        "type": "String"
+      },
+      {
+        "id": "CoordinateName",
+        "type": "String"
+      },
+      {
+        "id": "CoordinateFormat",
+        "type": "String"
+      },
+      {
+        "id": "StationLatitude",
+        "type": "String"
+      },
+      {
+        "id": "StationLongitude",
+        "type": "String"
+      },
+      {
+        "id": "StationAltitude",
+        "type": "String"
+      },
+      {
+        "id": "CountyName",
+        "type": "String"
+      },
+      {
+        "id": "TownName",
+        "type": "String"
+      },
+      {
+        "id": "CountyCode",
+        "type": "String"
+      },
+      {
+        "id": "TownCode",
+        "type": "String"
+      },
+      {
+        "id": "Weather",
+        "type": "String"
+      },
+      {
+        "id": "VisibilityDescription",
+        "type": "String"
+      },
+      {
+        "id": "SunshineDuration",
+        "type": "String"
+      },
+      {
+        "id": "Precipitation",
+        "type": "String"
+      },
+      {
+        "id": "WindDirection",
+        "type": "String"
+      },
+      {
+        "id": "WindSpeed",
+        "type": "String"
+      },
+      {
+        "id": "AirTemperature",
+        "type": "String"
+      },
+      {
+        "id": "RelativeHumidity",
+        "type": "String"
+      },
+      {
+        "id": "AirPressure",
+        "type": "String"
+      },
+      {
+        "id": "UVIndex",
+        "type": "String"
+      },
+      {
+        "id": "PeakGustSpeed",
+        "type": "String"
+      },
+      {
+        "id": "DateTime",
+        "type": "DateTime"
+      }
+    ]
+  },
+  "records": {
+    "Station": [
+      {
+        "StationName": "基隆",
+        "StationId": "466940",
+        "ObsTime": {
+          "DateTime": "2026-09-23T10:50:00+08:00"
+        },
+        "GeoInfo": {
+          "Coordinates": [
+            {
+              "CoordinateName": "TWD67",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.135104",
+              "StationLongitude": "121.732242"
+            },
+            {
+              "CoordinateName": "WGS84",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.133314",
+              "StationLongitude": "121.740475"
+            }
+          ],
+          "StationAltitude": "26.7",
+          "CountyName": "基隆市",
+          "TownName": "仁愛區",
+          "CountyCode": "10017",
+          "TownCode": "10017040"
+        },
+        "WeatherElement": {
+          "Weather": "晴",
+          "VisibilityDescription": ">30",
+          "SunshineDuration": "3.2",
+          "Now": {
+            "Precipitation": "0.0"
+          },
+          "WindDirection": "30.0",
+          "WindSpeed": "4.3",
+          "AirTemperature": "27.9",
+          "RelativeHumidity": "68",
+          "AirPressure": "1012.6",
+          "UVIndex": "6",
+          "Max10MinAverage": {
+            "WindSpeed": "3.9",
+            "Occurred_at": {
+              "WindDirection": "50.0",
+              "DateTime": "2026-09-23T09:29:00+08:00"
+            }
+          },
+          "GustInfo": {
+            "PeakGustSpeed": "6.3",
+            "Occurred_at": {
+              "WindDirection": "60.0",
+              "DateTime": "2026-09-23T09:44:00+08:00"
+            }
+          },
+          "DailyExtreme": {
+            "DailyHigh": {
+              "TemperatureInfo": {
+                "AirTemperature": "28.0",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T10:44:00+08:00"
+                }
+              }
+            },
+            "DailyLow": {
+              "TemperatureInfo": {
+                "AirTemperature": "23.7",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T04:11:00+08:00"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "StationName": "淡水",
+        "StationId": "466900",
+        "ObsTime": {
+          "DateTime": "2026-09-23T10:50:00+08:00"
+        },
+        "GeoInfo": {
+          "Coordinates": [
+            {
+              "CoordinateName": "TWD67",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.166664",
+              "StationLongitude": "121.440672"
+            },
+            {
+              "CoordinateName": "WGS84",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.164889",
+              "StationLongitude": "121.448906"
+            }
+          ],
+          "StationAltitude": "19.0",
+          "CountyName": "新北市",
+          "TownName": "淡水區",
+          "CountyCode": "65000",
+          "TownCode": "65000100"
+        },
+        "WeatherElement": {
+          "Weather": "晴",
+          "VisibilityDescription": ">30",
+          "SunshineDuration": "3.5",
+          "Now": {
+            "Precipitation": "0.0"
+          },
+          "WindDirection": "310.0",
+          "WindSpeed": "1.0",
+          "AirTemperature": "29.8",
+          "RelativeHumidity": "55",
+          "AirPressure": "1013.2",
+          "UVIndex": "8",
+          "Max10MinAverage": {
+            "WindSpeed": "2.4",
+            "Occurred_at": {
+              "WindDirection": "10.0",
+              "DateTime": "2026-09-23T09:28:00+08:00"
+            }
+          },
+          "GustInfo": {
+            "PeakGustSpeed": "5.2",
+            "Occurred_at": {
+              "WindDirection": "20.0",
+              "DateTime": "2026-09-23T09:40:00+08:00"
+            }
+          },
+          "DailyExtreme": {
+            "DailyHigh": {
+              "TemperatureInfo": {
+                "AirTemperature": "30.3",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T10:26:00+08:00"
+                }
+              }
+            },
+            "DailyLow": {
+              "TemperatureInfo": {
+                "AirTemperature": "22.4",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T04:56:00+08:00"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "StationName": "新北",
+        "StationId": "466881",
+        "ObsTime": {
+          "DateTime": "2026-09-23T10:50:00+08:00"
+        },
+        "GeoInfo": {
+          "Coordinates": [
+            {
+              "CoordinateName": "TWD67",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "24.960990",
+              "StationLongitude": "121.516977"
+            },
+            {
+              "CoordinateName": "WGS84",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "24.959207",
+              "StationLongitude": "121.525196"
+            }
+          ],
+          "StationAltitude": "24.5",
+          "CountyName": "新北市",
+          "TownName": "新店區",
+          "CountyCode": "65000",
+          "TownCode": "65000060"
+        },
+        "WeatherElement": {
+          "Weather": "晴",
+          "VisibilityDescription": ">30",
+          "SunshineDuration": "4.7",
+          "Now": {
+            "Precipitation": "0.0"
+          },
+          "WindDirection": "60.0",
+          "WindSpeed": "3.2",
+          "AirTemperature": "30.5",
+          "RelativeHumidity": "60",
+          "AirPressure": "1012.1",
+          "UVIndex": "7",
+          "Max10MinAverage": {
+            "WindSpeed": "3.3",
+            "Occurred_at": {
+              "WindDirection": "70.0",
+              "DateTime": "2026-09-23T09:22:00+08:00"
+            }
+          },
+          "GustInfo": {
+            "PeakGustSpeed": "6.5",
+            "Occurred_at": {
+              "WindDirection": "40.0",
+              "DateTime": "2026-09-23T09:38:00+08:00"
+            }
+          },
+          "DailyExtreme": {
+            "DailyHigh": {
+              "TemperatureInfo": {
+                "AirTemperature": "30.7",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T10:46:00+08:00"
+                }
+              }
+            },
+            "DailyLow": {
+              "TemperatureInfo": {
+                "AirTemperature": "21.1",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T02:28:00+08:00"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "StationName": "陽明山",
+        "StationId": "466930",
+        "ObsTime": {
+          "DateTime": "2026-09-23T10:50:00+08:00"
+        },
+        "GeoInfo": {
+          "Coordinates": [
+            {
+              "CoordinateName": "TWD67",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.163858",
+              "StationLongitude": "121.536313"
+            },
+            {
+              "CoordinateName": "WGS84",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.162078",
+              "StationLongitude": "121.544547"
+            }
+          ],
+          "StationAltitude": "607.1",
+          "CountyName": "臺北市",
+          "TownName": "北投區",
+          "CountyCode": "63000",
+          "TownCode": "63000120"
+        },
+        "WeatherElement": {
+          "Weather": "晴",
+          "VisibilityDescription": "-99",
+          "SunshineDuration": "2.5",
+          "Now": {
+            "Precipitation": "0.0"
+          },
+          "WindDirection": "170.0",
+          "WindSpeed": "1.8",
+          "AirTemperature": "24.5",
+          "RelativeHumidity": "72",
+          "AirPressure": "947.8",
+          "UVIndex": "8",
+          "Max10MinAverage": {
+            "WindSpeed": "1.9",
+            "Occurred_at": {
+              "WindDirection": "120.0",
+              "DateTime": "2026-09-23T09:01:00+08:00"
+            }
+          },
+          "GustInfo": {
+            "PeakGustSpeed": "5.5",
+            "Occurred_at": {
+              "WindDirection": "80.0",
+              "DateTime": "2026-09-23T09:47:00+08:00"
+            }
+          },
+          "DailyExtreme": {
+            "DailyHigh": {
+              "TemperatureInfo": {
+                "AirTemperature": "24.7",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T10:47:00+08:00"
+                }
+              }
+            },
+            "DailyLow": {
+              "TemperatureInfo": {
+                "AirTemperature": "19.3",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T04:13:00+08:00"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "StationName": "鞍部",
+        "StationId": "466910",
+        "ObsTime": {
+          "DateTime": "2026-09-23T10:50:00+08:00"
+        },
+        "GeoInfo": {
+          "Coordinates": [
+            {
+              "CoordinateName": "TWD67",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.184365",
+              "StationLongitude": "121.521495"
+            },
+            {
+              "CoordinateName": "WGS84",
+              "CoordinateFormat": "decimal degrees",
+              "StationLatitude": "25.182586",
+              "StationLongitude": "121.529731"
+            }
+          ],
+          "StationAltitude": "837.6",
+          "CountyName": "臺北市",
+          "TownName": "北投區",
+          "CountyCode": "63000",
+          "TownCode": "63000120"
+        },
+        "WeatherElement": {
+          "Weather": "晴",
+          "VisibilityDescription": ">30",
+          "SunshineDuration": "1.0",
+          "Now": {
+            "Precipitation": "0.0"
+          },
+          "WindDirection": "170.0",
+          "WindSpeed": "1.7",
+          "AirTemperature": "22.3",
+          "RelativeHumidity": "85",
+          "AirPressure": "-99",
+          "UVIndex": "7",
+          "Max10MinAverage": {
+            "WindSpeed": "3.2",
+            "Occurred_at": {
+              "WindDirection": "180.0",
+              "DateTime": "2026-09-23T09:38:00+08:00"
+            }
+          },
+          "GustInfo": {
+            "PeakGustSpeed": "7.5",
+            "Occurred_at": {
+              "WindDirection": "120.0",
+              "DateTime": "2026-09-23T09:33:00+08:00"
+            }
+          },
+          "DailyExtreme": {
+            "DailyHigh": {
+              "TemperatureInfo": {
+                "AirTemperature": "22.7",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T10:43:00+08:00"
+                }
+              }
+            },
+            "DailyLow": {
+              "TemperatureInfo": {
+                "AirTemperature": "17.4",
+                "Occurred_at": {
+                  "DateTime": "2026-09-23T05:15:00+08:00"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
