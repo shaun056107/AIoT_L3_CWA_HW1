@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>台灣即時天氣儀表板</title>
+  <meta name="description" content="台灣縣市即時天氣觀測儀表板，資料來源：中央氣象署 CWA O-A0003-001" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Plotly -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky:   #0ea5e9;
+      --sky2:  #38bdf8;
+      --sky3:  #7dd3fc;
+      --bg:    #f0f7ff;
+      --card:  #ffffff;
+      --text:  #0f172a;
+      --muted: #64748b;
+      --soft:  #94a3b8;
+      --sbg:   #e0f2fe;
+      --sbdr:  #bae6fd;
+      --w:     260px;
+    }
+
+    html, body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100%;
+    }
+
+    /* ── Layout ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--w);
+      min-width: var(--w);
+      background: var(--sbg);
+      border-right: 1px solid var(--sbdr);
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .sidebar-title { font-size: 1.2rem; font-weight: 700; color: var(--sky); display: flex; align-items: center; gap: 8px; }
+    .sidebar-divider { border: none; border-top: 1px solid var(--sbdr); }
+    .sidebar caption { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+    .sidebar label { font-size: 0.82rem; font-weight: 600; color: #0369a1; display: block; margin-bottom: 6px; }
+    #county-select {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--sbdr);
+      background: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #county-select:focus { border-color: var(--sky); }
+    .sidebar-meta { font-size: 0.75rem; color: var(--muted); line-height: 1.8; }
+    .sidebar-meta span { font-weight: 600; color: var(--sky); }
+
+    /* ── Main ── */
+    .main { flex: 1; padding: 28px 32px; overflow-x: hidden; }
+
+    /* ── Page header ── */
+    .page-header {
+      background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #7dd3fc 100%);
+      border-radius: 18px;
+      padding: 28px 36px;
+      margin-bottom: 24px;
+      color: white;
+      box-shadow: 0 4px 24px rgba(14,165,233,.25);
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
+    .page-header p  { font-size: 0.92rem; opacity: .85; }
+
+    /* ── KPI cards ── */
+    .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 28px; }
+    .kpi-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 18px 14px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(14,165,233,.10);
+      border-top: 4px solid var(--sky2);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(14,165,233,.18); }
+    .kpi-icon  { font-size: 1.6rem; margin-bottom: 6px; }
+    .kpi-value { color: var(--text); font-size: 1.55rem; font-weight: 700; line-height: 1.1; margin: 4px 0; }
+    .kpi-label { color: var(--muted); font-size: 0.72rem; font-weight: 600; letter-spacing:.04em; text-transform: uppercase; }
+    .kpi-sub   { color: var(--soft);  font-size: 0.70rem; margin-top: 4px; }
+
+    /* ── Section headings ── */
+    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--sky); margin: 28px 0 14px; display: flex; align-items: center; gap: 8px; }
+
+    /* ── Map ── */
+    #map { width: 100%; height: 480px; border-radius: 16px; box-shadow: 0 2px 16px rgba(14,165,233,.12); overflow: hidden; }
+
+    /* ── City cards ── */
+    .city-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+    .city-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: 0 2px 12px rgba(14,165,233,.10);
+      border-left: 5px solid var(--sky2);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .city-card:hover { transform: translateX(3px); box-shadow: 0 4px 16px rgba(14,165,233,.18); }
+    .city-card.hot  { border-left-color: #f97316; }
+    .city-card.cold { border-left-color: #6366f1; }
+    .city-name { font-size: 1rem;  font-weight: 700; color: var(--text); }
+    .city-temp { font-size: 1.8rem; font-weight: 700; color: var(--sky); line-height: 1.1; }
+    .city-meta { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── Charts ── */
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+    .chart-box {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 2px 12px rgba(14,165,233,.08);
+    }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(14,165,233,.08);
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    thead th {
+      background: var(--sbg);
+      color: #0369a1;
+      font-weight: 600;
+      padding: 10px 12px;
+      text-align: left;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 2px solid var(--sbdr);
+    }
+    thead th:hover { background: var(--sbdr); }
+    tbody tr { border-bottom: 1px solid #e2e8f0; transition: background .15s; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody td { padding: 9px 12px; white-space: nowrap; }
+
+    /* ── Footer ── */
+    .footer { margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 0.75rem; color: var(--soft); text-align: center; line-height: 1.8; }
+
+    /* ── Loading overlay ── */
+    #loading {
+      position: fixed; inset: 0; background: rgba(240,247,255,.92);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 9999; gap: 18px;
+      font-size: 1rem; color: var(--sky); font-weight: 600;
+    }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 5px solid var(--sbdr);
+      border-top-color: var(--sky);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error banner ── */
+    #error-banner {
+      display: none;
+      background: #fef2f2; border: 1px solid #fca5a5; border-radius: 12px;
+      padding: 16px 20px; color: #b91c1c; font-size: 0.9rem; margin-bottom: 20px;
+    }
+
+    @media (max-width: 1100px) {
+      .kpi-row { grid-template-columns: repeat(3, 1fr); }
+      .chart-row { grid-template-columns: 1fr; }
+      .city-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 700px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; min-width: unset; padding: 16px; }
+      .main { padding: 16px; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .city-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading">
+  <div class="spinner"></div>
+  <span>正在讀取氣象署資料…</span>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-title">🌤️ 台灣即時天氣</div>
+    <hr class="sidebar-divider" />
+    <div class="sidebar-meta" id="obs-meta">
+      🕐 觀測時間：<span id="obs-time">—</span><br>
+      📡 資料來源：CWA O-A0003-001
+    </div>
+    <hr class="sidebar-divider" />
+    <div>
+      <label for="county-select">🔍 選擇縣市</label>
+      <select id="county-select"><option value="all">全台灣</option></select>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <div id="error-banner">⚠️ 無法連接氣象署 API，請稍後再試。</div>
+
+    <!-- Header -->
+    <div class="page-header">
+      <h1>🌤️ 台灣即時天氣儀表板</h1>
+      <p id="header-sub">即時天氣觀測 · 全台灣 · — · 資料來源：中央氣象署 Open Data</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi-card"><div class="kpi-icon">🏙️</div><div class="kpi-value" id="kpi-cities">—</div><div class="kpi-label">縣市數量</div><div class="kpi-sub" id="kpi-cities-sub">—</div></div>
+      <div class="kpi-card"><div class="kpi-icon">🌡️</div><div class="kpi-value" id="kpi-avg-temp">—</div><div class="kpi-label">平均氣溫</div><div class="kpi-sub" id="kpi-avg-temp-sub">—</div></div>
+      <div class="kpi-card"><div class="kpi-icon">🔴</div><div class="kpi-value" id="kpi-max-temp">—</div><div class="kpi-label">最高氣溫</div><div class="kpi-sub" id="kpi-max-temp-sub">—</div></div>
+      <div class="kpi-card"><div class="kpi-icon">🔵</div><div class="kpi-value" id="kpi-min-temp">—</div><div class="kpi-label">最低氣溫</div><div class="kpi-sub" id="kpi-min-temp-sub">—</div></div>
+      <div class="kpi-card"><div class="kpi-icon">💧</div><div class="kpi-value" id="kpi-hum">—</div><div class="kpi-label">平均濕度</div><div class="kpi-sub">相對濕度</div></div>
+      <div class="kpi-card"><div class="kpi-icon">☔</div><div class="kpi-value" id="kpi-rain">—</div><div class="kpi-label">有雨縣市</div><div class="kpi-sub">有降水紀錄</div></div>
+    </div>
+
+    <!-- Map -->
+    <div class="section-title">🗺️ 台灣天氣地圖</div>
+    <div id="map"></div>
+
+    <!-- City cards -->
+    <div class="section-title">🏙️ 各縣市天氣一覽</div>
+    <div class="city-grid" id="city-grid"></div>
+
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0 24px" />
+
+    <!-- Charts -->
+    <div class="section-title">📊 氣象數據分析</div>
+    <div class="chart-row">
+      <div class="chart-box"><div id="chart-temp-bar" style="height:340px"></div></div>
+      <div class="chart-box"><div id="chart-scatter"  style="height:340px"></div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><div id="chart-wind"     style="height:340px"></div></div>
+      <div class="chart-box"><div id="chart-uv"       style="height:340px"></div></div>
+    </div>
+
+    <!-- Table -->
+    <div class="section-title">📋 各縣市數據總覽</div>
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">縣市</th>
+            <th onclick="sortTable(1)">平均氣溫°C</th>
+            <th onclick="sortTable(2)">最高°C</th>
+            <th onclick="sortTable(3)">最低°C</th>
+            <th onclick="sortTable(4)">濕度%</th>
+            <th onclick="sortTable(5)">風速 m/s</th>
+            <th onclick="sortTable(6)">氣壓 hPa</th>
+            <th onclick="sortTable(7)">紫外線</th>
+            <th onclick="sortTable(8)">降水 mm</th>
+            <th onclick="sortTable(9)">測站數</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      資料來源：中央氣象署 Open Data · O-A0003-001 · 自動氣象站即時觀測 · 以縣市彙整
+    </div>
+  </main>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let ALL_DATA = [];
+let OBS_TIME = "—";
+let selectedCounty = "all";
+let map, markersLayer;
+let sortDir = {};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const fmt1  = v => v != null ? v.toFixed(1) : "—";
+const fmtI  = v => v != null ? Math.round(v).toString() : "—";
+const avg   = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+
+function tempColor(temp, tMin, tMax) {
+  if (temp == null || tMax === tMin) return "#94a3b8";
+  const r = (temp - tMin) / (tMax - tMin);
+  const red   = Math.round(30  + r * 225);
+  const green = Math.round(144 - r * 80);
+  const blue  = Math.round(255 - r * 230);
+  return `rgb(${red},${green},${blue})`;
+}
+
+function filtered() {
+  if (selectedCounty === "all") return ALL_DATA;
+  return ALL_DATA.filter(d => d.County === selectedCounty);
+}
+
+// ── Initialise map ───────────────────────────────────────────────────────────
+function initMap() {
+  map = L.map("map").setView([23.7, 121.0], 7);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors",
+    maxZoom: 18,
+  }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+}
+
+// ── Render map markers ───────────────────────────────────────────────────────
+function renderMap(data) {
+  markersLayer.clearLayers();
+  const temps = data.map(d => d.AvgTemp).filter(t => t != null);
+  const tMin = Math.min(...temps);
+  const tMax = Math.max(...temps);
+
+  data.forEach(d => {
+    if (d.Lat == null || d.Lon == null) return;
+    const color = tempColor(d.AvgTemp, tMin, tMax);
+    const isSelected = selectedCounty === d.County;
+    const radius = isSelected ? 18 : 14;
+
+    const circle = L.circleMarker([d.Lat, d.Lon], {
+      radius,
+      color: "white",
+      weight: isSelected ? 2.5 : 1.5,
+      fillColor: color,
+      fillOpacity: 0.9,
+    });
+
+    circle.bindPopup(`
+      <b style="font-size:14px">${d.County}</b><br>
+      🌡 平均氣溫：<b>${fmt1(d.AvgTemp)}°C</b>
+        （最高 ${fmt1(d.MaxTemp)} / 最低 ${fmt1(d.MinTemp)}）<br>
+      💧 相對濕度：${fmtI(d.AvgHumidity)}%<br>
+      🌬 風速：${fmt1(d.AvgWindSpeed)} m/s ${d.WindDirLabel}<br>
+      ☀️ 紫外線：${fmtI(d.AvgUV)} &nbsp; ☔ 降水：${fmt1(d.TotalRain)}mm
+    `, { maxWidth: 240 });
+
+    circle.bindTooltip(`${d.County}: ${fmt1(d.AvgTemp)}°C`);
+
+    const tempLabel = L.divIcon({
+      html: `<div style="font-size:10px;font-weight:700;color:white;text-align:center;line-height:1;text-shadow:0 0 3px #000">${d.AvgTemp != null ? Math.round(d.AvgTemp)+"°" : ""}</div>`,
+      iconSize: [36, 20],
+      iconAnchor: [18, 10],
+      className: "",
+    });
+
+    circle.addTo(markersLayer);
+    L.marker([d.Lat, d.Lon], { icon: tempLabel }).addTo(markersLayer);
+  });
+}
+
+// ── KPI cards ────────────────────────────────────────────────────────────────
+function renderKPI(data) {
+  const temps  = data.map(d=>d.AvgTemp).filter(t=>t!=null);
+  const avgT   = avg(temps);
+  const hums   = data.map(d=>d.AvgHumidity).filter(t=>t!=null);
+  const rainCnt= data.filter(d=>(d.TotalRain||0)>0).length;
+
+  // hottest / coldest from ALL data (global)
+  const hotRow  = ALL_DATA.reduce((a,b)=> (b.MaxTemp??-999) > (a.MaxTemp??-999) ? b : a, ALL_DATA[0]);
+  const coldRow = ALL_DATA.reduce((a,b)=> (b.MinTemp??999)  < (a.MinTemp??999)  ? b : a, ALL_DATA[0]);
+
+  document.getElementById("kpi-cities").textContent     = data.length;
+  document.getElementById("kpi-cities-sub").textContent = `共 ${ALL_DATA.length} 個縣市`;
+  document.getElementById("kpi-avg-temp").textContent   = avgT != null ? fmt1(avgT)+"°C" : "—";
+  document.getElementById("kpi-avg-temp-sub").textContent = selectedCounty === "all" ? "全台灣" : selectedCounty;
+  document.getElementById("kpi-max-temp").textContent   = hotRow  ? fmt1(hotRow.MaxTemp)+"°C" : "—";
+  document.getElementById("kpi-max-temp-sub").textContent= hotRow  ? hotRow.County : "";
+  document.getElementById("kpi-min-temp").textContent   = coldRow ? fmt1(coldRow.MinTemp)+"°C" : "—";
+  document.getElementById("kpi-min-temp-sub").textContent= coldRow ? coldRow.County : "";
+  document.getElementById("kpi-hum").textContent        = avg(hums) != null ? fmtI(avg(hums))+"%" : "—";
+  document.getElementById("kpi-rain").textContent       = rainCnt;
+}
+
+// ── City cards ───────────────────────────────────────────────────────────────
+function renderCards(data) {
+  const sorted = [...data].sort((a,b)=>(b.AvgTemp??-999)-(a.AvgTemp??-999));
+  const tMax = sorted[0]?.AvgTemp;
+  const tMin = sorted[sorted.length-1]?.AvgTemp;
+  const grid = document.getElementById("city-grid");
+  grid.innerHTML = sorted.map(d => {
+    const cls = d.AvgTemp === tMax ? "hot" : d.AvgTemp === tMin ? "cold" : "";
+    const rain = (d.TotalRain||0) > 0 ? `☔ 降水 ${fmt1(d.TotalRain)}mm` : "無降水";
+    return `
+      <div class="city-card ${cls}">
+        <div class="city-name">${d.County}</div>
+        <div class="city-temp">${fmt1(d.AvgTemp)}°C</div>
+        <div class="city-meta">💧 ${fmtI(d.AvgHumidity)}% &nbsp;·&nbsp; 🌬️ ${fmt1(d.AvgWindSpeed)} m/s ${d.WindDirLabel} &nbsp;·&nbsp; ${rain} &nbsp;·&nbsp; UV ${fmtI(d.AvgUV)}</div>
+      </div>`;
+  }).join("");
+}
+
+// ── Charts ───────────────────────────────────────────────────────────────────
+const PLOTLY_BASE = {
+  plot_bgcolor: "white", paper_bgcolor: "white",
+  font: { family: "Inter", color: "#334155" },
+  margin: { t: 44, b: 40, l: 40, r: 20 },
+};
+
+function renderCharts(data) {
+  // 1. Temp bar chart
+  const barSorted = [...data].filter(d=>d.AvgTemp!=null).sort((a,b)=>a.AvgTemp-b.AvgTemp);
+  Plotly.newPlot("chart-temp-bar", [{
+    type: "bar", orientation: "h",
+    x: barSorted.map(d=>d.AvgTemp),
+    y: barSorted.map(d=>d.County),
+    marker: { color: barSorted.map(d=>d.AvgTemp), colorscale: "RdYlBu", reversescale: true, showscale: false },
+  }], { ...PLOTLY_BASE, title: { text: "各縣市平均氣溫（°C）", font:{size:14} },
+       xaxis:{title:"平均氣溫（°C）"}, yaxis:{title:""} }, {responsive:true, displayModeBar:false});
+
+  // 2. Scatter temp vs humidity
+  const sc = data.filter(d=>d.AvgTemp!=null&&d.AvgHumidity!=null);
+  Plotly.newPlot("chart-scatter", [{
+    type: "scatter", mode: "markers",
+    x: sc.map(d=>d.AvgTemp), y: sc.map(d=>d.AvgHumidity),
+    text: sc.map(d=>d.County),
+    marker: {
+      size: sc.map(d=>Math.max(8, (d.Stations||1)*2.5)),
+      color: sc.map(d=>d.AvgTemp), colorscale:"RdYlBu", reversescale:true, showscale:false,
+      opacity: 0.85,
+    },
+    hovertemplate: "<b>%{text}</b><br>氣溫：%{x}°C<br>濕度：%{y}%<extra></extra>",
+  }], { ...PLOTLY_BASE, title:{text:"氣溫與相對濕度關係",font:{size:14}},
+       xaxis:{title:"平均氣溫（°C）"}, yaxis:{title:"平均濕度（%）"} }, {responsive:true, displayModeBar:false});
+
+  // 3. Wind rose
+  const DIR_ORDER = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  const windMap = {};
+  data.filter(d=>d.WindDirLabel && d.WindDirLabel!=="—" && d.AvgWindSpeed!=null).forEach(d=>{
+    if (!windMap[d.WindDirLabel]) windMap[d.WindDirLabel] = [];
+    windMap[d.WindDirLabel].push(d.AvgWindSpeed);
+  });
+  const windDirs  = DIR_ORDER.filter(d=>windMap[d]);
+  const windSpeeds= windDirs.map(d=>avg(windMap[d]));
+  Plotly.newPlot("chart-wind", [{
+    type: "barpolar",
+    r: windSpeeds, theta: windDirs,
+    marker: { color: windSpeeds, colorscale:"Blues", showscale:false },
+    opacity: 0.85,
+  }], { ...PLOTLY_BASE,
+       title:{text:"風玫瑰圖（各風向平均風速）",font:{size:14}},
+       polar:{ bgcolor:"#f8fafc",
+               angularaxis:{tickfont:{size:10}},
+               radialaxis:{tickfont:{size:9}} }
+  }, {responsive:true, displayModeBar:false});
+
+  // 4. UV bar
+  const uv = [...data].filter(d=>d.AvgUV!=null).sort((a,b)=>b.AvgUV-a.AvgUV);
+  Plotly.newPlot("chart-uv", [{
+    type:"bar",
+    x: uv.map(d=>d.County), y: uv.map(d=>d.AvgUV),
+    marker:{color:uv.map(d=>d.AvgUV), colorscale:"YlOrRd", showscale:false},
+  }], { ...PLOTLY_BASE,
+        title:{text:"各縣市平均紫外線指數",font:{size:14}},
+        xaxis:{tickangle:-35, title:""}, yaxis:{title:"紫外線指數"}
+  }, {responsive:true, displayModeBar:false});
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function renderTable(data) {
+  const sorted = [...data].sort((a,b)=>(b.AvgTemp??-999)-(a.AvgTemp??-999));
+  document.getElementById("table-body").innerHTML = sorted.map(d=>`
+    <tr>
+      <td>${d.County}</td>
+      <td>${fmt1(d.AvgTemp)}</td>
+      <td>${fmt1(d.MaxTemp)}</td>
+      <td>${fmt1(d.MinTemp)}</td>
+      <td>${fmtI(d.AvgHumidity)}</td>
+      <td>${fmt1(d.AvgWindSpeed)}</td>
+      <td>${fmt1(d.AvgPressure)}</td>
+      <td>${fmtI(d.AvgUV)}</td>
+      <td>${fmt1(d.TotalRain)}</td>
+      <td>${d.Stations}</td>
+    </tr>`).join("");
+}
+
+// ── Sort table ────────────────────────────────────────────────────────────────
+function sortTable(colIdx) {
+  sortDir[colIdx] = !sortDir[colIdx];
+  const tbody = document.getElementById("table-body");
+  const rows  = Array.from(tbody.querySelectorAll("tr"));
+  rows.sort((a, b) => {
+    const aVal = a.cells[colIdx].textContent.trim();
+    const bVal = b.cells[colIdx].textContent.trim();
+    const aNum = parseFloat(aVal);
+    const bNum = parseFloat(bVal);
+    if (!isNaN(aNum) && !isNaN(bNum)) return sortDir[colIdx] ? aNum-bNum : bNum-aNum;
+    return sortDir[colIdx] ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ── Full render ───────────────────────────────────────────────────────────────
+function renderAll() {
+  const data = filtered();
+  const label = selectedCounty === "all" ? "全台灣" : selectedCounty;
+  document.getElementById("header-sub").textContent =
+    `即時天氣觀測 · ${label} · ${OBS_TIME} · 資料來源：中央氣象署 Open Data`;
+  renderKPI(data);
+  renderMap(ALL_DATA);   // map always shows all counties
+  renderCards(data);
+  renderCharts(data);
+  renderTable(data);
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+async function main() {
+  initMap();
+
+  try {
+    const resp = await fetch("/api/weather");
+    if (!resp.ok) throw new Error(resp.statusText);
+    const json = await resp.json();
+
+    if (json.error) throw new Error(json.error);
+
+    ALL_DATA = json.counties;
+    OBS_TIME = json.obs_time || "—";
+
+    document.getElementById("obs-time").textContent = OBS_TIME;
+
+    // Populate dropdown
+    const sel = document.getElementById("county-select");
+    ALL_DATA.sort((a,b)=>a.County.localeCompare(b.County,"zh-TW")).forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.County;
+      opt.textContent = d.County;
+      sel.appendChild(opt);
+    });
+
+    sel.addEventListener("change", () => {
+      selectedCounty = sel.value;
+      renderAll();
+    });
+
+    renderAll();
+  } catch (e) {
+    document.getElementById("error-banner").style.display = "block";
+    document.getElementById("error-banner").textContent = `⚠️ 無法連接氣象署 API：${e.message}`;
+    console.error(e);
+  } finally {
+    document.getElementById("loading").style.display = "none";
+  }
+}
+
+main();
+</script>
+</body>
+</html>

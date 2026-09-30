@@ -1,7 +1,4 @@
-requests
+flask
 pandas
-streamlit
-folium
-streamlit-folium
+requests
 python-dotenv
-plotly
